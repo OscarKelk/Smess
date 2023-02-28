@@ -1,9 +1,8 @@
 import chess
-import random
 
 weights = {chess.PAWN: 100, chess.KNIGHT: 280, chess.BISHOP: 320, chess.ROOK: 479, chess.QUEEN: 929, chess.KING: 60000}
 pst = {
-    "white": {
+    chess.WHITE: {
         chess.PAWN: [0, 0, 0, 0, 0, 0, 0, 0,
                      78, 83, 86, 73, 102, 82, 85, 90,
                      7, 29, 21, 44, 40, 31, 44, 7,
@@ -63,82 +62,35 @@ pst = {
     }
 }
 
-pst["black"] = {
-    chess.PAWN: list(reversed(pst["white"][chess.PAWN])),
-    chess.KNIGHT: list(reversed(pst["white"][chess.KNIGHT])),
-    chess.BISHOP: list(reversed(pst["white"][chess.BISHOP])),
-    chess.ROOK: list(reversed(pst["white"][chess.ROOK])),
-    chess.QUEEN: list(reversed(pst["white"][chess.QUEEN])),
-    "king": list(reversed(pst["white"]["king"])),
-    "king_endgame": list(reversed(pst["white"]["king_endgame"]))
+pst[chess.BLACK] = {
+    chess.PAWN: list(reversed(pst[chess.WHITE][chess.PAWN])),
+    chess.KNIGHT: list(reversed(pst[chess.WHITE][chess.KNIGHT])),
+    chess.BISHOP: list(reversed(pst[chess.WHITE][chess.BISHOP])),
+    chess.ROOK: list(reversed(pst[chess.WHITE][chess.ROOK])),
+    chess.QUEEN: list(reversed(pst[chess.WHITE][chess.QUEEN])),
+    "king": list(reversed(pst[chess.WHITE]["king"])),
+    "king_endgame": list(reversed(pst[chess.WHITE]["king_endgame"]))
 }
 
 
-def rate_potential_moves(board: chess.Board) -> dict:
-    legal_moves = list(board.legal_moves)
-    moves_scoring = {}
-
-    board_fen = board.fen()
-
-    for move in legal_moves:
-        white_material = 0
-        black_material = 0
-
-        try:
-            board.push(move)
-        except AssertionError:
-            print(board)
-            print(move)
-
-        for square in chess.SQUARES:
-            piece = board.piece_at(square)
-            if not piece:
-                continue
-            if piece.color == chess.WHITE:
-                white_material += weights[piece.piece_type]
-            elif piece.color == chess.BLACK:
-                black_material += weights[piece.piece_type]
-        board.set_fen(board_fen)
-
-        if board.turn == chess.WHITE:
-            moves_scoring[move] = white_material - black_material
-        elif board.turn == chess.BLACK:
-            moves_scoring[move] = black_material - white_material
-
-    return moves_scoring
-
-
-def calculate_best_move(board: chess.Board) -> chess.Move | None:
-    move_ratings = rate_potential_moves(board)
-    if len(move_ratings) <= 0:
-        return None
-
-    max_rating = max(move_ratings.values())
-    best_moves = [k for k, v in move_ratings.items() if v == max_rating]
-
-    return random.choice(best_moves)
-
-
 def evaluate_piece(piece: chess.Piece, square: chess.Square, endgame: bool) -> int:
-    piece_type = piece.piece_type
-
-    colour = "white" if piece.color == chess.WHITE else "black"
-
-    table = pst[colour][piece_type]
-    if piece_type == chess.KING:
-        table = pst[colour]["king_endgame"] if endgame else pst[colour]["king"]
+    if piece.piece_type == chess.KING:
+        table = pst[piece.color]["king_endgame"] if endgame else pst[piece.color]["king"]
+    else:
+        table = pst[piece.color][piece.piece_type]
 
     return table[square]
 
 
 def evaluate_capture(board: chess.Board, move: chess.Move) -> float:
-    piece_capturing = board.piece_at(move.from_square)
-    piece_captured = board.piece_at(move.to_square)
+    piece_capturing = board.piece_at(move.from_square).piece_type
+    piece_captured = board.piece_at(move.to_square).piece_type
 
     return weights[piece_captured] - weights[piece_capturing]
 
 
-def evaluate_move(board: chess.Board, move: chess.Move, endgame: bool) -> float:
+def evaluate_move(board: chess.Board, move: chess.Move) -> float:
+    endgame = check_endgame(board)
     piece_moved = board.piece_at(move.from_square)
 
     # Calculate the value of the piece's change in position between its last position and its new one
@@ -157,3 +109,50 @@ def evaluate_move(board: chess.Board, move: chess.Move, endgame: bool) -> float:
 
     return move_value
 
+
+def evaluate_board(board: chess.Board) -> float:
+    """
+    Evaluates the entire board to determine which player has the current advantage.
+    From white's perspective, so + is white, - is black
+    :param board:
+    :return float:
+    """
+    evaluation = 0.0
+    endgame = check_endgame(board)
+
+    for square in chess.SQUARES:
+        piece = board.piece_at(square)
+        if not piece:
+            continue
+
+        piece_value = weights[piece.piece_type] + evaluate_piece(piece, square, endgame)
+        if piece.color == chess.WHITE:
+            evaluation += piece_value
+        else:
+            evaluation -= piece_value
+
+    return evaluation
+
+
+def check_endgame(board: chess.Board) -> bool:
+    """
+    Determines whether the game is in the endgame
+    In endgame when:
+    - Both sides have no queens or
+    - Every side which has a queen has additionally no other pieces or one minorpiece maximum.
+    Counts these pieces
+
+    :param board:
+    :return bool:
+    """
+    queens = 0
+    minor_pieces = 0
+
+    for square in chess.SQUARES:
+        if piece := board.piece_at(square):
+            if piece.piece_type == chess.QUEEN:
+                queens += 1
+            if piece.piece_type in [chess.BISHOP, chess.KNIGHT]:
+                minor_pieces += 1
+
+    return queens == 0 or (queens == 2 and minor_pieces <= 1)
