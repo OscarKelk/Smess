@@ -83,6 +83,9 @@ def evaluate_piece(piece: chess.Piece, square: chess.Square, endgame: bool) -> i
 
 
 def evaluate_capture(board: chess.Board, move: chess.Move) -> float:
+    if board.is_en_passant(move):
+        return weights[chess.PAWN]
+
     piece_capturing = board.piece_at(move.from_square).piece_type
     piece_captured = board.piece_at(move.to_square).piece_type
 

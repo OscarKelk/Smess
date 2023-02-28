@@ -44,9 +44,6 @@ def minimax_root(depth: int, board: chess.Board) -> chess.Move:
 
     for move in moves:
         board.push(move)
-        # Checking if draw can be claimed at this level, because the threefold repetition check
-        # can be expensive. This should help the bot avoid a draw if it's not favorable
-        # https://python-chess.readthedocs.io/en/latest/core.html#chess.Board.can_claim_draw
         if board.can_claim_draw():
             value = 0.0
         else:
@@ -111,3 +108,4 @@ def minimax(depth: int, board: chess.Board, alpha: float, beta: float, is_maximi
     return best_move
 
 
+print(calculate_best_move(10, chess.Board()))

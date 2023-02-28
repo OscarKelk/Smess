@@ -1,5 +1,5 @@
 import chess
-import evaluation
+from move_choice import calculate_best_move
 
 
 def render(board: chess.Board) -> str:
@@ -52,7 +52,7 @@ while run_game:
             except chess.InvalidMoveError:
                 print("Invalid move, try again")
 
-        engine_move = evaluation.calculate_best_move(board)
+        engine_move = calculate_best_move(3, board)
         if engine_move:
             board.push(engine_move)
         else:
