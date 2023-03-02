@@ -1,3 +1,4 @@
+import book
 import chess
 import random
 from evaluation import evaluate_board, evaluate_move, check_endgame
@@ -13,7 +14,11 @@ def calculate_best_move(depth: int, board: chess.Board) -> chess.Move:
     :param board:
     :return:
     """
-    return minimax_root(depth, board)
+
+    if book_move := book.search_move_book(board):
+        return book_move
+    else:
+        return minimax_root(depth, board)
 
 
 def calculate_ordered_moves(board: chess.Board):
@@ -106,6 +111,3 @@ def minimax(depth: int, board: chess.Board, alpha: float, beta: float, is_maximi
                 return best_move
 
     return best_move
-
-
-print(calculate_best_move(10, chess.Board()))

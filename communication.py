@@ -37,6 +37,7 @@ def command(depth: int, board: chess.Board, msg: str):
     elif msg == "uci":
         print("id name Smess")
         print("id author Oscar Kelk")
+        print("option name Depth type spin default 3 min 1   max 5")
         print("uciok")
         return
 
@@ -71,7 +72,11 @@ def command(depth: int, board: chess.Board, msg: str):
         print(board.fen())
 
     if msg.startswith("go"):
-        _move = calculate_best_move(depth, board)
+        if "depth" in msg:
+            msg_depth = msg[9]
+            _move = calculate_best_move(int(msg_depth), board)
+        else:
+            _move = calculate_best_move(depth, board)
         print(f"bestmove {_move}")
         return
 
