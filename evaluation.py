@@ -98,7 +98,7 @@ def evaluate_move(board: chess.Board, move: chess.Move) -> float:
 
     # Calculate the value of the piece's change in position between its last position and its new one
     from_piece_val = evaluate_piece(piece_moved, move.from_square, endgame)
-    to_piece_val = evaluate_piece(piece_moved, move.from_square, endgame)
+    to_piece_val = evaluate_piece(piece_moved, move.to_square, endgame)
     pos_change = to_piece_val - from_piece_val
 
     capture_value = 0.0
