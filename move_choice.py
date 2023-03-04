@@ -1,7 +1,6 @@
 import book
 import chess
-import random
-from evaluation import evaluate_board, evaluate_move, check_endgame
+from evaluation import evaluate_board, evaluate_move
 
 MATE_SCORE = 1000000000
 MATE_THRESHOLD = 999000000
@@ -42,7 +41,7 @@ def minimax_root(depth: int, board: chess.Board) -> chess.Move:
     """
     # White always wants to maximize (and black to minimize)
     # the board score according to evaluate_board()
-    maximize = board.turn == chess.WHITE
+    maximize = board.turn
     best_move = -float("inf") if maximize else float("inf")
     moves = calculate_ordered_moves(board)
     best_move_found = moves[0]
